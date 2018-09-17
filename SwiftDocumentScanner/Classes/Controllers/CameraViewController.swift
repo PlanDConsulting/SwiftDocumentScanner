@@ -20,6 +20,7 @@ public protocol CameraViewControllerDelegate: class {
 @available(iOS 10.0, *)
 open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 
+	public var videoOrientation: AVCaptureVideoOrientation = .portrait
 	public var preset: AVCaptureSession.Preset = .high
 	public var videoGravity: AVLayerVideoGravity = .resizeAspectFill
 	public var lowLightBoost: Bool = false
@@ -51,6 +52,7 @@ open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampl
 		previewLayer.connection?.videoOrientation = .portrait
 		view.layer.insertSublayer(previewLayer, at: 0)
 		self.previewLayer = previewLayer
+		previewLayer.connection?.videoOrientation = videoOrientation
 
 		let status = AVCaptureDevice.authorizationStatus(for: .video)
 		switch status {
@@ -89,7 +91,7 @@ open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampl
 
 		previewLayer?.frame = view.bounds
 		previewLayer?.videoGravity = videoGravity
-		previewLayer?.connection?.videoOrientation = .portrait
+		previewLayer?.connection?.videoOrientation = videoOrientation
 	}
 
 	public func takePhoto() {
@@ -142,7 +144,6 @@ open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampl
 
 	public func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
 	}
-
 }
 
 @available(iOS 10.0, *)
@@ -271,8 +272,11 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
 	public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
 		DispatchQueue.global(qos: .userInitiated).async {
 			guard let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else { return }
+
+			let orientation = UIImageOrientation(videoOrientation: self.videoOrientation)
 			DispatchQueue.main.async { [weak self] in
-				self?.cameraDelegate?.cameraViewController(captured: image)
+				let capturedImage = image.fixOrientation().rotated(by: orientation.rotation)
+				self?.cameraDelegate?.cameraViewController(captured: capturedImage)
 			}
 		}
 	}
@@ -287,5 +291,4 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
 			}
 		}
 	}
-
 }
