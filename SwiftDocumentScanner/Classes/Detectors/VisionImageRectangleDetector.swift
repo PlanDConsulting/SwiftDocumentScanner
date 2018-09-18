@@ -15,6 +15,8 @@ public final class VisionImageRectangleDetector: ImageRectangleDetector {
 
 	private var completionHandler: Completion?
 
+	public init(){}
+
 	public func detect(image: UIImage, completion: @escaping Completion) {
 		guard let cgImage = image.cgImage else { return }
 

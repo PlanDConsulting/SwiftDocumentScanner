@@ -10,6 +10,8 @@ import UIKit
 
 public final class CIImageRectangleDetector: ImageRectangleDetector {
 
+	public init(){}
+
 	public func detect(image: UIImage, completion: @escaping Completion) {
 		DispatchQueue.global().async {
 			guard let ciImage = CIImage(image: image) else { return }
