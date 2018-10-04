@@ -9,9 +9,15 @@ import UIKit
 
 public final class TrackView: UIView {
 
-	public static var lineColor: UIColor = .green
-	public static var fillColor: UIColor = UIColor.green.withAlphaComponent(0.5)
-	public static var lineWidth: CGFloat = 2
+	public var lineColor: UIColor = .green {
+		didSet { shape.strokeColor = lineColor.cgColor }
+	}
+	public var fillColor: UIColor = UIColor.green.withAlphaComponent(0.5) {
+		didSet { shape.fillColor = fillColor.cgColor }
+	}
+	public var lineWidth: CGFloat = 2 {
+		didSet { shape.lineWidth = lineWidth }
+	}
 
 	private var shape = CAShapeLayer()
 	private var updated: Double = 0
@@ -29,9 +35,9 @@ public final class TrackView: UIView {
 	}
 
 	private func setup() {
-		shape.strokeColor = TrackView.lineColor.cgColor
-		shape.fillColor = TrackView.fillColor.cgColor
-		shape.lineWidth = TrackView.lineWidth
+		shape.strokeColor = lineColor.cgColor
+		shape.fillColor = fillColor.cgColor
+		shape.lineWidth = lineWidth
 
 		layer.addSublayer(shape)
 	}
@@ -40,9 +46,9 @@ public final class TrackView: UIView {
 		super.layoutSubviews()
 
 		shape.frame = bounds
-		shape.strokeColor = TrackView.lineColor.cgColor
-		shape.fillColor = TrackView.fillColor.cgColor
-		shape.lineWidth = TrackView.lineWidth
+		shape.strokeColor = lineColor.cgColor
+		shape.fillColor = fillColor.cgColor
+		shape.lineWidth = lineWidth
 	}
 
 	func update(path: UIBezierPath?) {

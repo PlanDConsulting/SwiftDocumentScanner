@@ -18,7 +18,7 @@ public protocol DocumentScannerViewControllerDelegate: class {
 @available(iOS 10.0, *)
 open class DocumentScannerViewController: CameraViewController {
 
-	private var trackView = TrackView()
+	public var trackView = TrackView()
 
 	public var autoDetector = AutoDetector() {
 		didSet {

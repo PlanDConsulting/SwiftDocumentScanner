@@ -20,18 +20,31 @@ public protocol CameraViewControllerDelegate: class {
 @available(iOS 10.0, *)
 open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 
-	public var videoOrientation: AVCaptureVideoOrientation = .portrait
-	public var preset: AVCaptureSession.Preset = .high
-	public var videoGravity: AVLayerVideoGravity = .resizeAspectFill
-	public var lowLightBoost: Bool = false
+	public var fixedOrientation: AVCaptureVideoOrientation?
+	public var videoOrientation: AVCaptureVideoOrientation = .portrait {
+		didSet {
+			guard let orientation = fixedOrientation else {
+				previewLayer?.connection?.videoOrientation = videoOrientation
+				return
+			}
+			previewLayer?.connection?.videoOrientation = orientation
+		}
+	}
+	public var preset: AVCaptureSession.Preset = .high {
+		didSet { reconfigureSession() }
+	}
+	public var videoGravity: AVLayerVideoGravity = .resizeAspectFill {
+		didSet { previewLayer?.videoGravity = videoGravity }
+	}
+	public var lowLightBoost: Bool = false {
+		didSet { reconfigureSession() }
+	}
 
 	public var tapToFocus: Bool = false
 	public var flashMode: AVCaptureDevice.FlashMode = .off
 
 	public var cameraPosition: AVCaptureDevice.Position = .back {
-		didSet {
-			reconfigureSession()
-		}
+		didSet { reconfigureSession() }
 	}
 
 	private(set) var session: AVCaptureSession = AVCaptureSession()
@@ -49,10 +62,8 @@ open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampl
 
 		let previewLayer = AVCaptureVideoPreviewLayer(session: session)
 		previewLayer.videoGravity = videoGravity
-		previewLayer.connection?.videoOrientation = .portrait
 		view.layer.insertSublayer(previewLayer, at: 0)
 		self.previewLayer = previewLayer
-		previewLayer.connection?.videoOrientation = videoOrientation
 
 		let status = AVCaptureDevice.authorizationStatus(for: .video)
 		switch status {
@@ -70,6 +81,8 @@ open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampl
 		default:
 			cameraDelegate?.cameraViewController(update: status)
 		}
+
+		videoOrientation = currentOrientation()
 	}
 
 	open override func viewDidDisappear(_ animated: Bool) {
@@ -92,6 +105,11 @@ open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampl
 		previewLayer?.frame = view.bounds
 		previewLayer?.videoGravity = videoGravity
 		previewLayer?.connection?.videoOrientation = videoOrientation
+	}
+
+	open override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+		super.viewWillTransition(to: size, with: coordinator)
+		forceOrientation()
 	}
 
 	public func takePhoto() {
@@ -143,6 +161,50 @@ open class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampl
 	}
 
 	public func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+	}
+
+	// MARK: - Private
+
+	private func forceOrientation() {
+		switch UIApplication.shared.statusBarOrientation {
+		case .portrait:
+			videoOrientation = .portrait
+		case .landscapeLeft:
+			videoOrientation = .landscapeRight
+		case .landscapeRight:
+			videoOrientation = .landscapeLeft
+		case .portraitUpsideDown:
+			videoOrientation = .portraitUpsideDown
+		case .unknown:
+			videoOrientation = currentOrientation()
+		}
+	}
+
+	private func currentOrientation() -> AVCaptureVideoOrientation {
+		switch UIApplication.shared.statusBarOrientation {
+		case .portrait:
+			return .portrait
+		case .landscapeLeft:
+			return .landscapeLeft
+		case .landscapeRight:
+			return .landscapeRight
+		case .portraitUpsideDown:
+			return .portraitUpsideDown
+		case .unknown:
+
+			switch UIDevice.current.orientation {
+			case .landscapeLeft:
+				return .landscapeRight
+			case .portrait:
+				return .portrait
+			case .portraitUpsideDown:
+				return .portraitUpsideDown
+			case .landscapeRight:
+				return .landscapeLeft
+			default:
+				return .portrait
+			}
+		}
 	}
 }
 
